@@ -12,8 +12,8 @@ from sigsci_auth import SigSciAuth, ApiHost, CorpName, SiteName
 #main()
 #Menu()
 #MenuSelection()  #branches to...
-#	>ViewCorps()		#TODO Need to parse
-#	>ViewSites()		#TODO Need to parse
+#	>ViewCorps()		
+#	>ViewSites()		
 #	>ViewOfflineAgents()	
 #	>ViewOnlineAgents()
 #	>ViewAgentInfo() 	#TODO currently not setup
@@ -30,6 +30,10 @@ def SaveToFile(DataToSave):
 	SaveFile.close()
 	print ("Your Report has been saved as %s to the current directory.")
 
+def SaveTempFile(DataToSave):
+	TempAgentJson = open("temp_sigsci_data.json", "w")
+	TempAgentJson.write(DataToSave.content)
+	TempAgentJson.close()
 
 def ChooseSite():
 	Loop = 1	
@@ -59,23 +63,13 @@ def ChooseSite():
 		else:
 			Loop = 1
 
-	
-
-
-
-
-
 
 def ViewOfflineAgents(MyHeader):
 	SiteName = ChooseSite();
 
 	Url = ApiHost + ('/corps/%s/sites/%s/agents' % (CorpName, SiteName))
 	AgentsInfo = requests.get(Url, headers=MyHeader)
-
-	TempAgentJson = open("temp_agent_list.json", "w")
-	TempAgentJson.write(AgentsInfo.content)
-	TempAgentJson.close()
-
+	SaveTempFile(AgentsInfo)
 	with open ("temp_agent_list.json", "r") as data_file:
 		Data = json.load(data_file)
 		Results = "HOSTNAME,STATUS,REMOTE_IP\n"
@@ -98,11 +92,7 @@ def ViewOnlineAgents(MyHeader):
 
 	Url = ApiHost + ('/corps/%s/sites/%s/agents' % (CorpName, SiteName))
 	AgentsInfo = requests.get(Url, headers=MyHeader)
-
-	TempAgentJson = open("temp_agent_list.json", "w")
-	TempAgentJson.write(AgentsInfo.content)
-	TempAgentJson.close()
-
+	SaveTempFile(AgentsInfo)
 	with open ("temp_agent_list.json", "r") as data_file:
 		Data = json.load(data_file		)
 		Results = "HOSTNAME,STATUS,REMOTE_IP\n"
@@ -114,8 +104,6 @@ def ViewOnlineAgents(MyHeader):
 				AgentRemoteIP = (Data["data"][Counter]["host.remote_addr"])
 				Results = Results + "%s,%s,%s\n" % (AgentName, AgentAlive, AgentRemoteIP)
 			Counter += 1
-	#print Results
-	#Data = AgentsInfo.json()
 	
 	return Results
 
@@ -123,15 +111,36 @@ def ViewOnlineAgents(MyHeader):
 def ViewSites(MyHeader):
 	Url = ApiHost + ('/corps/%s/sites' % (CorpName))
 	SitesInfo = requests.get(Url, headers=MyHeader)
-	
-	return SitesInfo.text
+	SaveTempFile(SitesInfo)
+	with open ("temp_sigsci_data.json", "r") as data_file:
+		Data = json.load(data_file)
+		Results = "FRIENDLY HOSTNAME,URL HOSTNAME, DATE CREATED\n"
+		Counter = 0
+		for Agents in (Data["data"]):
+			SitesFName = (Data["data"][Counter]["displayName"])
+			SitesURLName = (Data["data"][Counter]["name"])
+			DateCreated = (Data["data"][Counter]["created"])
+			Results = Results + "%s,%s,%s\n" % (SitesFName, SitesURLName, DateCreated)
+			Counter += 1
+		return Results
 
 
 def ViewCorps(MyHeader):
 	Url = ApiHost + ('/corps')
-	SitesInfo = requests.get(Url, headers=MyHeader)
-
-	return SitesInfo.text
+	CorpsInfo = requests.get(Url, headers=MyHeader)
+	SaveTempFile(CorpsInfo)
+	with open ("temp_sigsci_data.json", "r") as data_file:
+		Data = json.load(data_file)
+		#Data = CorpsInfo.json
+		Results = "FRIENDLY HOSTNAME,URL HOSTNAME, DATE CREATED\n"
+		Counter = 0
+		for Agents in (Data["data"]):
+			CorpsFName = (Data["data"][Counter]["displayName"])
+			CorpsURLName = (Data["data"][Counter]["name"])
+			DateCreated = (Data["data"][Counter]["created"])
+			Results = Results + "%s,%s,%s\n" % (CorpsFName, CorpsURLName, DateCreated)
+			Counter += 1
+		return Results
 
 
 def MenuSelection():
